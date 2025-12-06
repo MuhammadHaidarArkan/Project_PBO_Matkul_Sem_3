@@ -17,8 +17,8 @@ public class DatabaseConnection {
     private Connection connection;
     
     private final String URL = "jdbc:mysql://localhost:3306/apotek_lite";
-    private final String USER = "root";
-    private final String PASSWORD = ""; // sesuaikan
+    private final String USER = "ian";
+    private final String PASSWORD = "123"; // sesuaikan
     
     private DatabaseConnection() {
         try {
