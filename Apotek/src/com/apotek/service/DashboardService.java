@@ -1,15 +1,9 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package com.apotek.service;
+
 import com.apotek.config.DatabaseConnection;
 import java.sql.*;
 import java.time.LocalDate;
-/**
- *
- * @author alfrandiano
- */
+
 public class DashboardService {
     private Connection conn;
     
@@ -17,7 +11,7 @@ public class DashboardService {
         this.conn = DatabaseConnection.getInstance().getConnection();
     }
     
-    // Total Penjualan Hari Ini
+    // Total Pendapatan Kotor Hari Ini (dari total_bayar, bukan uang_bayar)
     public double getTotalPenjualanHariIni() {
         String sql = "SELECT COALESCE(SUM(total_bayar), 0) as total " +
                      "FROM transaksi WHERE DATE(tgl_transaksi) = CURDATE()";

@@ -67,7 +67,6 @@ public class Login extends javax.swing.JFrame {
             }
         });
 
-        txtPassword.setText("jPasswordField1");
         txtPassword.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 txtPasswordActionPerformed(evt);

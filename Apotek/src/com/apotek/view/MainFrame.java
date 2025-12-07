@@ -63,6 +63,7 @@ public class MainFrame extends javax.swing.JFrame {
     // ==================== TAB DASHBOARD ====================
     
     private void loadDashboardData() {
+        // Total Pendapatan Kotor (bukan total bayar)
         lblTotalPenjualanHariIni.setText(String.format("Rp. %,.0f", 
             dashService.getTotalPenjualanHariIni()));
         
@@ -79,8 +80,12 @@ public class MainFrame extends javax.swing.JFrame {
     // ==================== TAB KASIR ====================
     
     private void setupKasirTable() {
-        // Setup model tabel keranjang
+        // Setup model tabel keranjang dengan kolom yang BENAR
         modelKeranjang = (DefaultTableModel) tblKeranjang.getModel();
+        
+        // PENTING: Set kolom tabel sesuai struktur: Nama Barang, Harga, Qty, Subtotal
+        modelKeranjang.setColumnCount(4);
+        modelKeranjang.setColumnIdentifiers(new Object[]{"Nama Barang", "Harga", "Qty", "Subtotal"});
         modelKeranjang.setRowCount(0);
         
         // Reset total
@@ -91,27 +96,32 @@ public class MainFrame extends javax.swing.JFrame {
     
     // Method untuk menambah obat ke keranjang (dipanggil dari double-click tabel atau dialog)
     public void tambahKeKeranjang(String kodeObat, String namaObat, int jumlah, double harga) {
-        // Cek apakah obat sudah ada di keranjang
+        // Cek apakah obat sudah ada di keranjang (berdasarkan NAMA, bukan kode)
         boolean found = false;
         for (int i = 0; i < modelKeranjang.getRowCount(); i++) {
-            if (modelKeranjang.getValueAt(i, 0).equals(kodeObat)) {
+            // Kolom 0 = Nama Barang
+            if (modelKeranjang.getValueAt(i, 0).toString().equals(namaObat)) {
                 // Update jumlah jika sudah ada
                 int jmlLama = Integer.parseInt(modelKeranjang.getValueAt(i, 2).toString());
                 int jmlBaru = jmlLama + jumlah;
                 double subtotal = jmlBaru * harga;
                 
-                modelKeranjang.setValueAt(jmlBaru, i, 2);
-                modelKeranjang.setValueAt(subtotal, i, 4);
+                modelKeranjang.setValueAt(jmlBaru, i, 2);        // Kolom 2 = Qty
+                modelKeranjang.setValueAt(subtotal, i, 3);       // Kolom 3 = Subtotal
                 found = true;
                 break;
             }
         }
         
         // Tambah baris baru jika belum ada
+        // FORMAT: Nama Barang | Harga | Qty | Subtotal
         if (!found) {
             double subtotal = jumlah * harga;
             modelKeranjang.addRow(new Object[]{
-                kodeObat, namaObat, jumlah, harga, subtotal
+                namaObat,   // Kolom 0
+                harga,      // Kolom 1
+                jumlah,     // Kolom 2
+                subtotal    // Kolom 3
             });
         }
         
@@ -122,7 +132,8 @@ public class MainFrame extends javax.swing.JFrame {
     private void hitungTotal() {
         totalBelanja = 0;
         for (int i = 0; i < modelKeranjang.getRowCount(); i++) {
-            totalBelanja += Double.parseDouble(modelKeranjang.getValueAt(i, 4).toString());
+            // Kolom 3 = Subtotal
+            totalBelanja += Double.parseDouble(modelKeranjang.getValueAt(i, 3).toString());
         }
         txtTotalHarga.setText(String.format("Rp %,.0f", totalBelanja));
     }
@@ -153,6 +164,9 @@ public class MainFrame extends javax.swing.JFrame {
         jLabel13 = new javax.swing.JLabel();
         txtKembalian = new javax.swing.JTextField();
         btnBayar = new javax.swing.JButton();
+        jLabel3 = new javax.swing.JLabel();
+        txtCariObat = new javax.swing.JTextField();
+        btnCariObat = new javax.swing.JButton();
         jPanel3 = new javax.swing.JPanel();
         jScrollPane2 = new javax.swing.JScrollPane();
         tblStok = new javax.swing.JTable();
@@ -319,9 +333,18 @@ public class MainFrame extends javax.swing.JFrame {
                 .addComponent(jLabel13)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(txtKembalian, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 180, Short.MAX_VALUE)
                 .addComponent(btnBayar, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE))
         );
+
+        jLabel3.setText("Cari Obat :");
+
+        btnCariObat.setText("Cari & Tambah");
+        btnCariObat.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnCariObatActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
         jPanel2.setLayout(jPanel2Layout);
@@ -329,7 +352,14 @@ public class MainFrame extends javax.swing.JFrame {
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel2Layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 427, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 427, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGroup(jPanel2Layout.createSequentialGroup()
+                        .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, 72, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(txtCariObat, javax.swing.GroupLayout.PREFERRED_SIZE, 180, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(18, 18, 18)
+                        .addComponent(btnCariObat, javax.swing.GroupLayout.PREFERRED_SIZE, 128, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jPanel5, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addContainerGap())
@@ -338,10 +368,17 @@ public class MainFrame extends javax.swing.JFrame {
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel2Layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(jPanel5, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jScrollPane1))
-                .addContainerGap(33, Short.MAX_VALUE))
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(jPanel2Layout.createSequentialGroup()
+                        .addComponent(jPanel5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addContainerGap(33, Short.MAX_VALUE))
+                    .addGroup(jPanel2Layout.createSequentialGroup()
+                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
+                        .addGap(18, 18, 18)
+                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, 55, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(txtCariObat, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(btnCariObat)))))
         );
 
         jTabbedPane1.addTab("Kasir", jPanel2);
@@ -559,7 +596,7 @@ public class MainFrame extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnBayarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBayarActionPerformed
-                // Validasi keranjang tidak kosong
+        // Validasi keranjang tidak kosong
         if (modelKeranjang.getRowCount() == 0) {
             JOptionPane.showMessageDialog(this, 
                 "Keranjang masih kosong!", 
@@ -612,14 +649,19 @@ public class MainFrame extends javax.swing.JFrame {
             transaksi.setUangKembali(kembalian);
             
             // Ambil detail dari tabel keranjang
+            // FORMAT TABEL: Nama Barang | Harga | Qty | Subtotal
             for (int i = 0; i < modelKeranjang.getRowCount(); i++) {
-                String kodeObat = modelKeranjang.getValueAt(i, 0).toString();
-                String namaObat = modelKeranjang.getValueAt(i, 1).toString();
-                int jumlah = Integer.parseInt(modelKeranjang.getValueAt(i, 2).toString());
-                double harga = Double.parseDouble(modelKeranjang.getValueAt(i, 3).toString());
+                String namaObat = modelKeranjang.getValueAt(i, 0).toString();  // Kolom 0
+                double harga = Double.parseDouble(modelKeranjang.getValueAt(i, 1).toString()); // Kolom 1
+                int jumlah = Integer.parseInt(modelKeranjang.getValueAt(i, 2).toString()); // Kolom 2
                 
-                DetailTransaksi detail = new DetailTransaksi(kodeObat, namaObat, jumlah, harga);
-                transaksi.getDetailList().add(detail);
+                // Cari kode obat dari nama
+                List<Obat> listObat = obatService.cariObat(namaObat);
+                if (!listObat.isEmpty()) {
+                    String kodeObat = listObat.get(0).getKodeObat();
+                    DetailTransaksi detail = new DetailTransaksi(kodeObat, namaObat, jumlah, harga);
+                    transaksi.getDetailList().add(detail);
+                }
             }
             
             // Simpan transaksi
@@ -632,10 +674,9 @@ public class MainFrame extends javax.swing.JFrame {
                     "Sukses", 
                     JOptionPane.INFORMATION_MESSAGE);
                 
-                // Reset form & refresh data
+                // PENTING: Refresh SEMUA data setelah transaksi berhasil
                 resetKasir();
-                loadDashboardData();
-                loadStokData();
+                refreshAllData();
             } else {
                 JOptionPane.showMessageDialog(this, 
                     "✗ Transaksi Gagal!\nPeriksa stok obat.", 
@@ -808,7 +849,169 @@ public class MainFrame extends javax.swing.JFrame {
             }
         }
     }//GEN-LAST:event_btnBuatPurchaseOrderActionPerformed
+
+    private void btnCariObatActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCariObatActionPerformed
+        // TODO add your handling code here:
+            String keyword = txtCariObat.getText().trim();
     
+        if (keyword.isEmpty()) {
+            JOptionPane.showMessageDialog(this, 
+                "Masukkan nama atau kode obat yang ingin dicari!", 
+                "Info", 
+                JOptionPane.INFORMATION_MESSAGE);
+            txtCariObat.requestFocus();
+            return;
+        }
+
+        // Cari obat di database
+        List<Obat> listObat = obatService.cariObat(keyword);
+
+        if (listObat.isEmpty()) {
+            JOptionPane.showMessageDialog(this, 
+                "Obat tidak ditemukan!\nCoba kata kunci lain.", 
+                "Tidak Ditemukan", 
+                JOptionPane.WARNING_MESSAGE);
+            txtCariObat.selectAll();
+            return;
+        }
+
+        // Jika hanya 1 hasil, langsung tampilkan dialog input jumlah
+        if (listObat.size() == 1) {
+            Obat obat = listObat.get(0);
+            tampilkanDialogTambahObat(obat);
+        } else {
+            // Jika lebih dari 1 hasil, tampilkan dialog pilihan
+            tampilkanDialogPilihanObat(listObat);
+        }
+
+        // Clear search box
+        txtCariObat.setText("");
+    }//GEN-LAST:event_btnCariObatActionPerformed
+    
+    private void tampilkanDialogTambahObat(Obat obat) {
+    // Cek stok tersedia
+    if (obat.getStok() <= 0) {
+        JOptionPane.showMessageDialog(this, 
+            "Maaf, stok " + obat.getNamaObat() + " habis!", 
+            "Stok Habis", 
+            JOptionPane.WARNING_MESSAGE);
+        return;
+    }
+    
+    // Dialog input jumlah
+    String info = String.format(
+        "Obat: %s\n" +
+        "Harga: Rp %,.0f\n" +
+        "Stok Tersedia: %d\n\n" +
+        "Masukkan jumlah:",
+        obat.getNamaObat(),
+        obat.getHargaSatuan(),
+        obat.getStok()
+    );
+    
+    String jumlahStr = JOptionPane.showInputDialog(this, info, "1");
+    
+    if (jumlahStr != null && !jumlahStr.isEmpty()) {
+        try {
+            int jumlah = Integer.parseInt(jumlahStr);
+            
+            // Validasi jumlah
+            if (jumlah <= 0) {
+                JOptionPane.showMessageDialog(this, 
+                    "Jumlah harus lebih dari 0!", 
+                    "Error", 
+                    JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            
+            if (jumlah > obat.getStok()) {
+                JOptionPane.showMessageDialog(this, 
+                    "Jumlah melebihi stok tersedia!\nStok: " + obat.getStok(), 
+                    "Error", 
+                    JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            
+            // Tambahkan ke keranjang
+            tambahKeKeranjang(
+                obat.getKodeObat(), 
+                obat.getNamaObat(), 
+                jumlah, 
+                obat.getHargaSatuan()
+            );
+            
+            JOptionPane.showMessageDialog(this, 
+                "✓ " + obat.getNamaObat() + " berhasil ditambahkan ke keranjang!", 
+                "Sukses", 
+                JOptionPane.INFORMATION_MESSAGE);
+            
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this, 
+                "Format jumlah tidak valid!", 
+                "Error", 
+                JOptionPane.ERROR_MESSAGE);
+        }
+    }
+}
+
+    // Method untuk menampilkan dialog pilihan jika hasil pencarian > 1
+    private void tampilkanDialogPilihanObat(List<Obat> listObat) {
+        // Buat array untuk JOptionPane
+        String[] options = new String[listObat.size()];
+
+        for (int i = 0; i < listObat.size(); i++) {
+            Obat obat = listObat.get(i);
+            options[i] = String.format("%s - Rp %,.0f (Stok: %d)", 
+                obat.getNamaObat(), 
+                obat.getHargaSatuan(), 
+                obat.getStok()
+            );
+        }
+
+        // Tampilkan dialog pilihan
+        String pilihan = (String) JOptionPane.showInputDialog(
+            this,
+            "Ditemukan " + listObat.size() + " obat. Pilih salah satu:",
+            "Pilih Obat",
+            JOptionPane.QUESTION_MESSAGE,
+            null,
+            options,
+            options[0]
+        );
+
+        if (pilihan != null) {
+            // Cari index obat yang dipilih
+            for (int i = 0; i < options.length; i++) {
+                if (options[i].equals(pilihan)) {
+                    tampilkanDialogTambahObat(listObat.get(i));
+                    break;
+                }
+            }
+        }
+    }
+
+// ====================================================================
+// BONUS: Tambahkan KeyListener untuk Enter di txtCariObat
+// Panggil method ini di setupEventListeners()
+// ====================================================================
+
+    private void setupCariObatEnterKey() {
+        txtCariObat.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                if (evt.getKeyCode() == java.awt.event.KeyEvent.VK_ENTER) {
+                    btnCariObatActionPerformed(null);
+                }
+            }
+        });
+    }
+    
+    private void refreshAllData() {
+        loadDashboardData();  // Update statistik dashboard
+        loadStokData();       // Update tabel stok
+        loadLaporanData();    // Update laporan
+    }
+
+
     private void resetKasir() {
         modelKeranjang.setRowCount(0);
         txtUangBayar.setText("");
@@ -922,6 +1125,14 @@ public class MainFrame extends javax.swing.JFrame {
                 }
             }
         });
+        
+        txtCariObat.addKeyListener(new java.awt.event.KeyAdapter() {
+        public void keyPressed(java.awt.event.KeyEvent evt) {
+            if (evt.getKeyCode() == java.awt.event.KeyEvent.VK_ENTER) {
+                btnCariObatActionPerformed(null);
+            }
+        }
+        });
     }
     
     
@@ -953,6 +1164,7 @@ public class MainFrame extends javax.swing.JFrame {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnBayar;
     private javax.swing.JButton btnBuatPurchaseOrder;
+    private javax.swing.JButton btnCariObat;
     private javax.swing.JButton btnEdit;
     private javax.swing.JButton btnHapus;
     private javax.swing.JLabel btnProdukPerluDirestock;
@@ -965,6 +1177,7 @@ public class MainFrame extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel14;
     private javax.swing.JLabel jLabel18;
     private javax.swing.JLabel jLabel2;
+    private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel6;
     private javax.swing.JLabel jLabel8;
@@ -989,6 +1202,7 @@ public class MainFrame extends javax.swing.JFrame {
     private javax.swing.JTable tblLaporan;
     private javax.swing.JTable tblStok;
     private javax.swing.JTable tblStokHabis;
+    private javax.swing.JTextField txtCariObat;
     private javax.swing.JTextField txtKembalian;
     private javax.swing.JTextField txtTotalHarga;
     private javax.swing.JTextField txtUangBayar;
