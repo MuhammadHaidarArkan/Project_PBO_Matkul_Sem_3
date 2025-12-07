@@ -291,6 +291,7 @@ public class MainFrame extends javax.swing.JFrame {
 
         jLabel13.setText("Kembalian");
 
+        btnBayar.setBackground(new java.awt.Color(102, 255, 102));
         btnBayar.setText("Bayar");
         btnBayar.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
